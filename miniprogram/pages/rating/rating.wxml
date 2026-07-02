@@ -1,0 +1,96 @@
+<!--
+  颜值评价（真人打分） - 打分系统页面
+  功能：性别筛选 + 随机推送照片 + 5秒倒计时 + 打分
+-->
+<view class="container">
+  <!-- 1. 性别筛选栏 -->
+  <view class="filter-bar">
+    <view
+      class="filter-item {{pushPref === 'all' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-pref="all"
+    >全部</view>
+    <view
+      class="filter-item {{pushPref === 'male' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-pref="male"
+    >只看男生</view>
+    <view
+      class="filter-item {{pushPref === 'female' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-pref="female"
+    >只看女生</view>
+  </view>
+
+  <!-- 2. 照片展示区 -->
+  <view class="photo-section" wx:if="{{!isEmpty}}">
+    <view class="photo-card">
+      <!-- 照片图片 -->
+      <image
+        class="photo-image {{photoHidden ? 'blur' : ''}}"
+        src="{{photoUrl}}"
+        mode="aspectFill"
+        wx:if="{{photoUrl}}"
+      />
+
+      <!-- 照片隐藏后的遮罩 -->
+      <view class="overlay" wx:if="{{photoHidden}}">
+        <view class="overlay-inner">
+          <view class="overlay-icon">👀</view>
+          <view class="overlay-text">照片已隐藏，请打分</view>
+        </view>
+      </view>
+
+      <!-- 倒计时指示器 -->
+      <view class="countdown-badge" wx:if="{{!photoHidden && countdown > 0}}">
+        <view class="countdown-ring">
+          <text class="countdown-num">{{countdown}}</text>
+        </view>
+      </view>
+
+      <!-- 加载中 -->
+      <view class="photo-loading" wx:if="{{loading}}">
+        <view class="loading-spinner"></view>
+        <text>正在为你寻找照片...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 3. 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <view class="empty-icon">📷</view>
+    <view class="empty-text">
+      {{emptyMessage}}
+    </view>
+    <view class="btn btn-outline" style="margin-top:20px" bindtap="loadNextPhoto">
+      刷新试试
+    </view>
+  </view>
+
+  <!-- 4. 打分区 -->
+  <view class="rating-section" wx:if="{{!isEmpty && photoHidden}}">
+    <view class="rating-title">请选择分数（1-10分）</view>
+
+    <!-- 1-10 分数按钮 -->
+    <view class="score-group">
+      <view
+        wx:for="{{scores}}"
+        wx:key="*this"
+        class="score-btn {{selectedScore === item ? 'active' : ''}}"
+        bindtap="onScoreSelect"
+        data-score="{{item}}"
+      >{{item}}</view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view
+      class="btn {{selectedScore ? 'btn-primary' : 'btn-disabled'}} submit-btn"
+      bindtap="onSubmit"
+    >提交并看下一张</view>
+  </view>
+
+  <!-- 5. 等待打分提示（照片展示中但未隐藏） -->
+  <view class="waiting-hint" wx:if="{{!isEmpty && !photoHidden && !loading}}">
+    <text>⏱ 请仔细观看，{{countdown}}秒后照片将自动隐藏</text>
+  </view>
+</view>

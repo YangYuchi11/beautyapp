@@ -1,0 +1,93 @@
+<!--
+  颜值评价（真人打分） - 我的照片页面
+  功能：上传照片 / 查看分数 / 删除照片 / 性别设置
+-->
+<view class="container">
+  <!-- 1. 我的照片展示区 -->
+  <view class="section">
+    <view class="section-title">我的照片</view>
+
+    <view class="photo-card" wx:if="{{hasPhoto}}">
+      <image
+        class="photo-image"
+        src="{{photoUrl}}"
+        mode="aspectFill"
+      />
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-card" wx:if="{{!hasPhoto && !loading}}">
+      <view class="empty-icon">📷</view>
+      <view class="empty-text">暂无照片</view>
+      <view class="empty-sub">上传一张照片，让其他人来评价你的颜值吧！</view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading-card" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+  </view>
+
+  <!-- 2. 性别设置 -->
+  <view class="section">
+    <view class="section-title">我的性别</view>
+    <view class="gender-row">
+      <view
+        class="gender-btn {{gender === 'male' ? 'active-male' : ''}}"
+        bindtap="onGenderSelect"
+        data-gender="male"
+      >🙋‍♂️ 男</view>
+      <view
+        class="gender-btn {{gender === 'female' ? 'active-female' : ''}}"
+        bindtap="onGenderSelect"
+        data-gender="female"
+      >🙋‍♀️ 女</view>
+    </view>
+    <view class="gender-hint" wx:if="{{!gender}}">
+      请先设置性别后再上传照片
+    </view>
+  </view>
+
+  <!-- 3. 操作区 -->
+  <view class="section actions">
+    <!-- 上传照片 -->
+    <view
+      class="btn btn-primary"
+      bindtap="onUploadPhoto"
+    >{{hasPhoto ? '重新上传照片' : '上传照片'}}</view>
+
+    <!-- 查看分数 -->
+    <view class="btn btn-outline" bindtap="onViewScore" wx:if="{{hasPhoto}}">
+      查看我的分数
+    </view>
+
+    <!-- 删除照片 -->
+    <view class="btn btn-danger" bindtap="onDeletePhoto" wx:if="{{hasPhoto}}">
+      删除照片
+    </view>
+  </view>
+
+  <!-- 4. 分数弹窗 -->
+  <view class="modal-mask" wx:if="{{showScoreModal}}" bindtap="onCloseScoreModal">
+    <view class="modal-content" catchtap>
+      <view class="modal-title" wx:if="{{hasRatings}}">我的颜值评分</view>
+      <view class="modal-title" wx:else>暂无评分</view>
+
+      <view wx:if="{{hasRatings}}">
+        <view class="score-big">{{averageScore}}</view>
+        <view class="score-label">平均分</view>
+        <view class="score-count">共 {{totalCount}} 人打分</view>
+      </view>
+
+      <view wx:else>
+        <view class="no-score-text">还没有人给你打分</view>
+        <view class="no-score-sub">快去给别人打分吧！</view>
+      </view>
+
+      <view class="btn btn-primary" style="margin-top:20px" bindtap="onCloseScoreModal">
+        知道了
+      </view>
+    </view>
+  </view>
+</view>

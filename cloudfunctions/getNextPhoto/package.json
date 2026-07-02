@@ -1,0 +1,9 @@
+{
+  "name": "getNextPhoto",
+  "version": "1.0.0",
+  "description": "获取下一张待评分照片",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

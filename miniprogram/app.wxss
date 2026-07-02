@@ -1,0 +1,255 @@
+/* ============================================
+   颜值评价（真人打分）小程序 - 全局样式
+   iOS 简约风：白/浅灰背景，近黑文字，系统蓝点缀
+   ============================================ */
+
+/* -------- CSS 变量（通过 page 级定义） -------- */
+
+page {
+  --color-bg: #F7F7F7;
+  --color-white: #FFFFFF;
+  --color-text: #1C1C1E;
+  --color-text-secondary: #8E8E93;
+  --color-primary: #007AFF;
+  --color-danger: #FF3B30;
+  --color-border: #E5E5EA;
+  --color-card-shadow: rgba(0, 0, 0, 0.06);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  background-color: var(--color-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -------- 通用布局 -------- */
+
+.container {
+  min-height: 100vh;
+  padding: 20px 16px;
+  box-sizing: border-box;
+}
+
+/* -------- 卡片 -------- */
+
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 12px var(--color-card-shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* -------- 按钮 -------- */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  padding: 0 24px;
+  transition: opacity 0.2s;
+  box-sizing: border-box;
+}
+
+.btn:active {
+  opacity: 0.7;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #FFFFFF;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-disabled {
+  background: #C7C7CC;
+  color: #FFFFFF;
+  pointer-events: none;
+}
+
+/* -------- 空状态 -------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-state .empty-text {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* -------- 性别筛选栏 -------- */
+
+.filter-bar {
+  display: flex;
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: 0 1px 4px var(--color-card-shadow);
+}
+
+.filter-bar .filter-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  border-radius: 10px;
+  transition: all 0.25s;
+}
+
+.filter-bar .filter-item.active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+/* -------- 分数按钮组 -------- */
+
+.score-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.score-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.score-btn:active {
+  transform: scale(0.95);
+}
+
+.score-btn.active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+/* -------- 遮罩层 -------- */
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+
+.overlay-text {
+  font-size: 17px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* -------- 弹窗 -------- */
+
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 300px;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-body {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-buttons .btn {
+  flex: 1;
+}
+
+/* -------- Toast 提示 -------- */
+
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #FFF;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  z-index: 2000;
+  pointer-events: none;
+}

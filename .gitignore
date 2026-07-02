@@ -1,0 +1,4 @@
+node_modules/
+.tmp/
+project.private.config.json
+miniprogram/project.private.config.json

@@ -1,0 +1,238 @@
+/* ============================================
+   打分系统页面 - 样式
+   ============================================ */
+
+/* -------- 页面容器 -------- */
+.container {
+  padding: 16px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- 性别筛选栏 -------- */
+.filter-bar {
+  display: flex;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.filter-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #8E8E93;
+  border-radius: 10px;
+  transition: all 0.25s;
+}
+
+.filter-item.active {
+  background: #007AFF;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+/* -------- 照片展示区 -------- */
+.photo-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.photo-card {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 3 / 4;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-image {
+  width: 100%;
+  height: 100%;
+  transition: filter 0.5s ease;
+}
+
+.photo-image.blur {
+  filter: blur(30px);
+}
+
+/* -------- 倒计时标识 -------- */
+.countdown-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.countdown-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.countdown-num {
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------- 照片隐藏遮罩 -------- */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-inner {
+  text-align: center;
+}
+
+.overlay-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.overlay-text {
+  font-size: 17px;
+  color: #1C1C1E;
+  font-weight: 500;
+}
+
+/* -------- 加载状态 -------- */
+.photo-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #8E8E93;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #E5E5EA;
+  border-top: 3px solid #007AFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -------- 打分区 -------- */
+.rating-section {
+  padding-top: 8px;
+}
+
+.rating-title {
+  text-align: center;
+  font-size: 15px;
+  color: #8E8E93;
+  margin-bottom: 16px;
+}
+
+/* 1-10 分数按钮 */
+.score-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.score-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 2px solid #E5E5EA;
+  background: #FFFFFF;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1C1C1E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+
+.score-btn:active {
+  transform: scale(0.92);
+}
+
+.score-btn.active {
+  background: #007AFF;
+  color: #FFFFFF;
+  border-color: #007AFF;
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* -------- 等待提示 -------- */
+.waiting-hint {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 14px;
+  color: #8E8E93;
+}
+
+/* -------- 空状态 -------- */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-text {
+  font-size: 15px;
+  color: #8E8E93;
+  line-height: 1.6;
+}
