@@ -1,12 +1,13 @@
 <!--
   颜值评价（真人打分） - 我的照片页面
-  功能：上传照片 / 查看分数 / 删除照片 / 性别设置
+  功能：上传照片（内容安全检测）/ 查看分数 / 删除照片 / 性别设置
 -->
 <view class="container">
   <!-- 1. 我的照片展示区 -->
   <view class="section">
     <view class="section-title">我的照片</view>
 
+    <!-- 已通过内容安全检测 -->
     <view class="photo-card" wx:if="{{hasPhoto}}">
       <image
         class="photo-image"
@@ -15,8 +16,31 @@
       />
     </view>
 
+    <!-- 审核中 -->
+    <view class="status-card" wx:if="{{!loading && photoStatus === 'checking'}}">
+      <image class="status-photo" wx:if="{{photoUrl}}" src="{{photoUrl}}" mode="aspectFill" />
+      <view class="status-icon">🔍</view>
+      <view class="status-title">照片审核中</view>
+      <view class="status-sub" wx:if="{{checkTimeout}}">
+        审核超过 30 分钟仍没有结果，建议重新上传
+      </view>
+      <view class="status-sub" wx:else>
+        照片已提交内容安全检测，通过后其他人才会在打分页看到
+      </view>
+      <view class="btn btn-outline btn-small" bindtap="onRefreshStatus">刷新审核状态</view>
+    </view>
+
+    <!-- 未通过内容安全检测 -->
+    <view class="status-card rejected" wx:if="{{!loading && photoStatus === 'rejected'}}">
+      <view class="status-icon">🚫</view>
+      <view class="status-title">照片含违规信息</view>
+      <view class="status-sub">
+        该照片未通过内容安全检测，已停止展示，请更换后重新上传
+      </view>
+    </view>
+
     <!-- 空状态 -->
-    <view class="empty-card" wx:if="{{!hasPhoto && !loading}}">
+    <view class="empty-card" wx:if="{{!hasPhotoRecord && !loading}}">
       <view class="empty-icon">📷</view>
       <view class="empty-text">暂无照片</view>
       <view class="empty-sub">上传一张照片，让其他人来评价你的颜值吧！</view>
@@ -55,7 +79,12 @@
     <view
       class="btn btn-primary"
       bindtap="onUploadPhoto"
-    >{{hasPhoto ? '重新上传照片' : '上传照片'}}</view>
+    >{{hasPhotoRecord ? '重新上传照片' : '上传照片'}}</view>
+
+    <!-- 内容安全说明 -->
+    <view class="upload-hint">
+      上传的照片会先经过微信内容安全检测，含违规信息的照片不会展示
+    </view>
 
     <!-- 查看分数 -->
     <view class="btn btn-outline" bindtap="onViewScore" wx:if="{{hasPhoto}}">
@@ -69,7 +98,7 @@
     </view>
 
     <!-- 删除照片 -->
-    <view class="btn btn-danger" bindtap="onDeletePhoto" wx:if="{{hasPhoto}}">
+    <view class="btn btn-danger" bindtap="onDeletePhoto" wx:if="{{hasPhotoRecord}}">
       删除照片
     </view>
   </view>

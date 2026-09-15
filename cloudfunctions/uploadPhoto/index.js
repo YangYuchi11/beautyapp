@@ -1,11 +1,33 @@
 // ============================================
-// 上传照片云函数 — 记录照片到数据库
+// 上传照片云函数 — 记录照片到数据库 + 提交内容安全检测
 // 前端先通过 wx.cloud.uploadFile 上传到云存储，再调用此函数记录
+//
+// 合规要求：用户上传的图片属于用户发布内容，必须先通过微信内容安全检测
+// （security.mediaCheckAsync，异步接口）才能展示给其他人。
+// 因此照片入库时为「审核中」且 is_active = false，检测通过后才由
+// mediaCheckCallback 云函数置为可展示状态。
 // ============================================
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const db = cloud.database();
+
+// 内容安全检测场景：1 资料；2 评论；3 论坛；4 社交日志
+const SEC_CHECK_SCENE = 2;
+
+// 回滚：检测提交失败的照片一律不入库、不展示
+async function rollback(photoId, cloudFileId) {
+  try {
+    await db.collection('photos').doc(photoId).remove();
+  } catch (e) {
+    console.warn('[uploadPhoto] 回滚照片记录失败:', e);
+  }
+  try {
+    await cloud.deleteFile({ fileList: [cloudFileId] });
+  } catch (e) {
+    console.warn('[uploadPhoto] 回滚云存储文件失败:', e);
+  }
+}
 
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
@@ -18,7 +40,7 @@ exports.main = async (event, context) => {
   }
 
   try {
-    // 查找用户，确认已设置性别
+    // 1. 查找用户，确认已设置性别
     const userRes = await db.collection('users').where({ _openid: openid }).get();
     if (userRes.data.length === 0) {
       return { code: -1, message: '用户不存在' };
@@ -29,7 +51,7 @@ exports.main = async (event, context) => {
       return { code: -1, message: '请先设置性别后再上传照片' };
     }
 
-    // 先将旧照片设为非活跃（如有）
+    // 2. 先将旧照片设为非活跃（如有）
     const oldPhotos = await db.collection('photos')
       .where({ _openid: openid, is_active: true })
       .get();
@@ -50,21 +72,61 @@ exports.main = async (event, context) => {
       ));
     }
 
-    // 创建新照片记录
+    // 3. 新照片先入库为「审核中」，此时不会出现在他人的打分页
     const createRes = await db.collection('photos').add({
       data: {
         _openid: openid,
         cloud_file_id,
-        status: 'approved',
-        is_active: true,
+        status: 'checking',
+        is_active: false,
         created_at: new Date(),
+      },
+    });
+
+    const photoId = createRes._id;
+
+    // 4. 提交内容安全异步检测（图片）
+    // 检测结果由微信推送到消息接收方，由 mediaCheckCallback 云函数处理
+    let traceId = '';
+    try {
+      const urlRes = await cloud.getTempFileURL({ fileList: [cloud_file_id] });
+      const mediaUrl = urlRes.fileList[0] && urlRes.fileList[0].tempFileURL;
+      if (!mediaUrl) {
+        throw new Error('无法获取图片访问链接');
+      }
+
+      const checkRes = await cloud.openapi.security.mediaCheckAsync({
+        mediaUrl,
+        mediaType: 2, // 2：图片
+        version: 2,
+        scene: SEC_CHECK_SCENE,
+        openid, // 要求用户近两小时内访问过小程序
+      });
+
+      if (checkRes.errcode !== 0) {
+        throw new Error(`errcode=${checkRes.errcode} errmsg=${checkRes.errmsg}`);
+      }
+
+      traceId = checkRes.traceId;
+    } catch (e) {
+      // 未能提交检测的图片绝不展示，直接回滚
+      console.error('[uploadPhoto] 提交内容安全检测失败:', e);
+      await rollback(photoId, cloud_file_id);
+      return { code: -1, message: '照片检测提交失败，请稍后重试' };
+    }
+
+    await db.collection('photos').doc(photoId).update({
+      data: {
+        check_trace_id: traceId,
+        check_submitted_at: new Date(),
       },
     });
 
     return {
       code: 0,
       data: {
-        photo_id: createRes._id,
+        photo_id: photoId,
+        status: 'checking',
       },
     };
   } catch (err) {

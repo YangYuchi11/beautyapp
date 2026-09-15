@@ -1,0 +1,9 @@
+{
+  "name": "mediaCheckCallback",
+  "version": "1.0.0",
+  "description": "接收内容安全异步检测结果的云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

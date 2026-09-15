@@ -1,5 +1,9 @@
 // ============================================
 // 获取我的照片云函数
+// 返回最近一次上传的照片及其内容安全检测状态：
+//   checking  审核中（尚未对其他人展示）
+//   approved  已通过，正常展示
+//   rejected  含违规信息，已下架并删除文件
 // ============================================
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -12,7 +16,7 @@ exports.main = async (event, context) => {
 
   try {
     const photoRes = await db.collection('photos')
-      .where({ _openid: openid, is_active: true })
+      .where({ _openid: openid })
       .orderBy('created_at', 'desc')
       .limit(1)
       .get();
@@ -22,18 +26,21 @@ exports.main = async (event, context) => {
     }
 
     const photo = photoRes.data[0];
+    const status = photo.status || (photo.is_active ? 'approved' : 'checking');
 
-    // 获取临时下载链接
+    // 违规照片的文件已删除，不再返回访问链接
     let tempUrl = '';
-    try {
-      const urlRes = await cloud.getTempFileURL({
-        fileList: [photo.cloud_file_id],
-      });
-      if (urlRes.fileList[0] && urlRes.fileList[0].tempFileURL) {
-        tempUrl = urlRes.fileList[0].tempFileURL;
+    if (status !== 'rejected') {
+      try {
+        const urlRes = await cloud.getTempFileURL({
+          fileList: [photo.cloud_file_id],
+        });
+        if (urlRes.fileList[0] && urlRes.fileList[0].tempFileURL) {
+          tempUrl = urlRes.fileList[0].tempFileURL;
+        }
+      } catch (e) {
+        console.warn('[getMyPhoto] 获取临时链接失败:', e);
       }
-    } catch (e) {
-      console.warn('[getMyPhoto] 获取临时链接失败:', e);
     }
 
     return {
@@ -42,6 +49,9 @@ exports.main = async (event, context) => {
         photo_id: photo._id,
         cloud_file_id: photo.cloud_file_id,
         url: tempUrl,
+        status,
+        is_active: !!photo.is_active,
+        check_submitted_at: photo.check_submitted_at || photo.created_at,
         created_at: photo.created_at,
       },
     };

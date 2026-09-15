@@ -8,9 +8,14 @@ const util = require('../../utils/util');
 Page({
   data: {
     // 我的照片
-    hasPhoto: false,
+    hasPhoto: false,        // 照片已通过检测、正常展示
     photoUrl: '',
     photoId: null,
+
+    // 内容安全审核状态：'' | checking | approved | rejected
+    photoStatus: '',
+    hasPhotoRecord: false,  // 是否存在照片记录（含审核中/未通过）
+    checkTimeout: false,    // 审核超过 30 分钟仍无结果
 
     // 性别
     gender: null, // 'male' | 'female'
@@ -56,6 +61,14 @@ Page({
     }
   },
 
+  onHide() {
+    this.stopStatusPolling();
+  },
+
+  onUnload() {
+    this.stopStatusPolling();
+  },
+
   // ============================================
   // 加载我的数据
   // ============================================
@@ -76,25 +89,114 @@ Page({
         this.setData(this.buildGateData(profile.given_rating_count || 0));
       }
 
-      // 更新照片
-      if (photo) {
-        this.setData({
-          hasPhoto: true,
-          photoUrl: photo.url,
-          photoId: photo.photo_id,
-        });
-      } else {
-        this.setData({
-          hasPhoto: false,
-          photoUrl: '',
-          photoId: null,
-        });
-      }
+      // 更新照片及内容安全审核状态
+      this.applyPhoto(photo);
 
       this.setData({ loading: false });
     }).catch((err) => {
       console.error('加载数据失败:', err);
       this.setData({ loading: false });
+    });
+  },
+
+  // ============================================
+  // 应用照片及审核状态
+  // ============================================
+  applyPhoto(photo) {
+    if (photo) {
+      const status = photo.status || 'approved';
+      this.setData({
+        hasPhotoRecord: true,
+        photoStatus: status,
+        hasPhoto: status === 'approved',
+        photoUrl: photo.url,
+        photoId: photo.photo_id,
+        checkTimeout: status === 'checking' && this.isCheckTimeout(photo.check_submitted_at),
+      });
+      this.syncStatusPolling();
+      return;
+    }
+
+    this.setData({
+      hasPhotoRecord: false,
+      photoStatus: '',
+      hasPhoto: false,
+      photoUrl: '',
+      photoId: null,
+      checkTimeout: false,
+    });
+    this.stopStatusPolling();
+  },
+
+  // 轮询专用：只查照片状态，不重复拉取用户资料
+  refreshPhoto() {
+    return api.getMyPhoto().then((photo) => {
+      if (photo) {
+        this.applyPhoto(photo);
+      }
+    }).catch(() => {
+      // 静默失败，等待下次轮询
+    });
+  },
+
+  // ============================================
+  // 审核状态轮询
+  // 异步检测结果最慢 30 分钟返回，这里在提交后的短时间内主动刷新
+  // ============================================
+  isCheckTimeout(submittedAt) {
+    if (!submittedAt) return false;
+    const t = new Date(submittedAt).getTime();
+    if (isNaN(t)) return false;
+    return Date.now() - t > 30 * 60 * 1000;
+  },
+
+  syncStatusPolling() {
+    const needPoll = this.data.photoStatus === 'checking' && !this.data.checkTimeout;
+
+    if (!needPoll) {
+      this.stopStatusPolling();
+      return;
+    }
+
+    if (this._statusTimer) return;
+
+    this._statusTick = 0;
+    this._statusTimer = setInterval(() => {
+      this._statusTick += 1;
+      // 最多轮询 2 分钟，之后交给用户手动刷新
+      if (this._statusTick > 24) {
+        this.stopStatusPolling();
+        return;
+      }
+      this.refreshPhoto();
+    }, 5000);
+  },
+
+  stopStatusPolling() {
+    if (this._statusTimer) {
+      clearInterval(this._statusTimer);
+      this._statusTimer = null;
+    }
+  },
+
+  onRefreshStatus() {
+    util.showLoading('查询中...');
+    api.getMyPhoto().then((photo) => {
+      util.hideLoading();
+
+      const status = (photo && photo.status) || '';
+      if (status === 'checking') {
+        util.showToast('照片仍在审核中，请稍后再看');
+      } else if (status === 'rejected') {
+        util.showToast('照片含违规信息');
+      } else if (status === 'approved') {
+        util.showToast('审核已通过 ✓');
+      }
+
+      this.applyPhoto(photo);
+    }).catch(() => {
+      util.hideLoading();
+      util.showToast('查询失败，请重试');
     });
   },
 
@@ -153,7 +255,7 @@ Page({
 
             api.uploadPhoto(filePath).then(() => {
               util.hideLoading();
-              util.showToast('上传成功 ✓');
+              util.showToast('照片已提交审核');
               // 刷新页面数据
               this.loadData();
             }).catch((err) => {
@@ -234,9 +336,13 @@ Page({
   // 删除照片
   // ============================================
   onDeletePhoto() {
+    const isPending = this.data.photoStatus === 'checking';
+
     util.showConfirm(
       '确认删除',
-      '删除后该照片的所有评分数据将被清空，且不可恢复。确定要删除吗？',
+      isPending
+        ? '该照片还在审核中，确定要删除吗？'
+        : '删除后该照片的所有评分数据将被清空，且不可恢复。确定要删除吗？',
       '确认删除',
       '取消'
     ).then((confirmed) => {
@@ -246,12 +352,16 @@ Page({
 
       api.deletePhoto().then(() => {
         util.hideLoading();
-        util.showToast('照片已删除，评分数据已清空');
+        util.showToast('照片已删除');
         this.setData({
+          hasPhotoRecord: false,
+          photoStatus: '',
           hasPhoto: false,
           photoUrl: '',
           photoId: null,
+          checkTimeout: false,
         });
+        this.stopStatusPolling();
       }).catch((err) => {
         util.hideLoading();
         util.showToast(err.message || '删除失败');

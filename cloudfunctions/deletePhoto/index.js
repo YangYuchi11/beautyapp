@@ -1,5 +1,6 @@
 // ============================================
 // 删除照片云函数 — 删除云存储文件 + 数据库记录 + 评分
+// 支持删除任意状态的照片（审核中 / 已通过 / 未通过）
 // ============================================
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -11,9 +12,11 @@ exports.main = async (event, context) => {
   const openid = wxContext.OPENID;
 
   try {
-    // 查找用户活跃照片
+    // 查找用户最近一次上传的照片
     const photoRes = await db.collection('photos')
-      .where({ _openid: openid, is_active: true })
+      .where({ _openid: openid })
+      .orderBy('created_at', 'desc')
+      .limit(1)
       .get();
 
     if (photoRes.data.length === 0) {
@@ -22,7 +25,7 @@ exports.main = async (event, context) => {
 
     const photo = photoRes.data[0];
 
-    // 1. 删除云存储文件
+    // 1. 删除云存储文件（违规照片的文件已在检测回调中删除，此处容错）
     try {
       await cloud.deleteFile({ fileList: [photo.cloud_file_id] });
     } catch (e) {
