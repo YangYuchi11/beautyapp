@@ -18,11 +18,25 @@ Page({
     // 加载状态
     loading: true,
 
+    // 解锁进度：累计给他人打分满 requiredCount 次才能查看分数
+    // requiredCount 需与 getMyRating 云函数中的 REQUIRED_GIVEN_COUNT 保持一致
+    givenCount: 0,
+    requiredCount: 5,
+    remainCount: 5,
+    canViewScore: false,
+    progressPercent: 0,
+
     // 分数弹窗
     showScoreModal: false,
     averageScore: 0,
     totalCount: 0,
     hasRatings: false,
+    rank: null,
+    rankTotal: 0,
+    beatPercent: 0,
+
+    // 未解锁提示弹窗
+    showLockModal: false,
   },
 
   onLoad() {
@@ -55,6 +69,11 @@ Page({
       // 更新性别
       if (profile && profile.gender) {
         this.setData({ gender: profile.gender });
+      }
+
+      // 更新解锁进度
+      if (profile) {
+        this.setData(this.buildGateData(profile.given_rating_count || 0));
       }
 
       // 更新照片
@@ -152,6 +171,19 @@ Page({
   },
 
   // ============================================
+  // 解锁进度（已评价他人次数 → 页面展示状态）
+  // ============================================
+  buildGateData(givenCount) {
+    const required = this.data.requiredCount;
+    return {
+      givenCount,
+      remainCount: Math.max(required - givenCount, 0),
+      canViewScore: givenCount >= required,
+      progressPercent: Math.min(Math.round((givenCount / required) * 100), 100),
+    };
+  },
+
+  // ============================================
   // 查看分数
   // ============================================
   onViewScore() {
@@ -159,12 +191,25 @@ Page({
 
     api.getMyRating().then((data) => {
       util.hideLoading();
-      this.setData({
+
+      // 未满 5 次给别人打分，提示去打分
+      if (!data.can_view) {
+        this.setData(Object.assign(
+          { showLockModal: true },
+          this.buildGateData(data.given_count || 0)
+        ));
+        return;
+      }
+
+      this.setData(Object.assign({
         showScoreModal: true,
         averageScore: data.average_score,
         totalCount: data.total_count,
         hasRatings: data.has_ratings,
-      });
+        rank: data.rank,
+        rankTotal: data.rank_total,
+        beatPercent: data.beat_percent,
+      }, this.buildGateData(data.given_count || 0)));
     }).catch((err) => {
       util.hideLoading();
       util.showToast(err.message || '查询失败');
@@ -173,6 +218,16 @@ Page({
 
   onCloseScoreModal() {
     this.setData({ showScoreModal: false });
+  },
+
+  onCloseLockModal() {
+    this.setData({ showLockModal: false });
+  },
+
+  // 去打分页
+  onGoRating() {
+    this.setData({ showLockModal: false });
+    wx.switchTab({ url: '/pages/rating/rating' });
   },
 
   // ============================================

@@ -10,6 +10,10 @@ Page({
     // 推送偏好：all / male / female
     pushPref: 'all',
 
+    // 已给他人打分的累计次数（用于提示还差几次可解锁自己的分数）
+    givenRatingCount: null,
+    requiredRatingCount: 5,
+
     // 当前照片信息
     photoId: null,
     photoUrl: '',
@@ -76,9 +80,16 @@ Page({
   // ============================================
   loadUserPref() {
     api.getUserProfile().then((user) => {
-      if (user && user.push_gender_pref) {
-        this.setData({ pushPref: user.push_gender_pref });
+      if (!user) return;
+
+      const data = {};
+      if (user.push_gender_pref) {
+        data.pushPref = user.push_gender_pref;
       }
+      if (typeof user.given_rating_count === 'number') {
+        data.givenRatingCount = user.given_rating_count;
+      }
+      this.setData(data);
     }).catch(() => {
       // 静默失败，使用默认值
     });
@@ -230,7 +241,23 @@ Page({
 
     api.submitRating(photoId, selectedScore).then(() => {
       util.hideLoading();
-      util.showToast('评分成功 ✓');
+
+      // 累计已评价次数，并提示距离解锁「查看自己分数」还差几次
+      const required = this.data.requiredRatingCount;
+      let givenCount = null;
+
+      if (typeof this.data.givenRatingCount === 'number') {
+        givenCount = this.data.givenRatingCount + 1;
+        this.setData({ givenRatingCount: givenCount });
+      }
+
+      if (givenCount === null || givenCount > required) {
+        util.showToast('评分成功 ✓');
+      } else if (givenCount === required) {
+        util.showToast('评分成功 ✓ 已解锁你的分数和排名');
+      } else {
+        util.showToast(`评分成功 ✓ 再评 ${required - givenCount} 张解锁你的分数`);
+      }
 
       // 自动加载下一张
       this.setData({

@@ -93,4 +93,9 @@
   <view class="waiting-hint" wx:if="{{!isEmpty && !photoHidden && !loading}}">
     <text>⏱ 请仔细观看，{{countdown}}秒后照片将自动隐藏</text>
   </view>
+
+  <!-- 6. 解锁进度：给他人打分累计满 5 次可查看自己的分数 -->
+  <view class="unlock-hint" wx:if="{{givenRatingCount !== null && givenRatingCount < requiredRatingCount}}">
+    已评价 {{givenRatingCount}}/{{requiredRatingCount}} 张 · 再评 {{requiredRatingCount - givenRatingCount}} 张可查看你的分数与排名
+  </view>
 </view>

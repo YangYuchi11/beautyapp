@@ -62,6 +62,12 @@
       查看我的分数
     </view>
 
+    <!-- 解锁进度提示 -->
+    <view class="score-hint {{canViewScore ? 'unlocked' : ''}}" wx:if="{{hasPhoto}}">
+      <block wx:if="{{canViewScore}}">✓ 已解锁 · 已为 {{givenCount}} 张照片打分</block>
+      <block wx:else>再给 {{remainCount}} 张照片打分，即可查看分数与排名（{{givenCount}}/{{requiredCount}}）</block>
+    </view>
+
     <!-- 删除照片 -->
     <view class="btn btn-danger" bindtap="onDeletePhoto" wx:if="{{hasPhoto}}">
       删除照片
@@ -78,6 +84,18 @@
         <view class="score-big">{{averageScore}}</view>
         <view class="score-label">平均分</view>
         <view class="score-count">共 {{totalCount}} 人打分</view>
+
+        <!-- 全站排名 -->
+        <view class="rank-box" wx:if="{{rank}}">
+          <view class="rank-main">
+            <text class="rank-label">全站排名</text>
+            <text class="rank-value">第 {{rank}} 名</text>
+            <text class="rank-unit">/ 共 {{rankTotal}} 人</text>
+          </view>
+          <view class="rank-sub" wx:if="{{beatPercent > 0}}">
+            超过了 {{beatPercent}}% 的用户
+          </view>
+        </view>
       </view>
 
       <view wx:else>
@@ -87,6 +105,33 @@
 
       <view class="btn btn-primary" style="margin-top:20px" bindtap="onCloseScoreModal">
         知道了
+      </view>
+    </view>
+  </view>
+
+  <!-- 5. 未解锁提示弹窗 -->
+  <view class="modal-mask" wx:if="{{showLockModal}}" bindtap="onCloseLockModal">
+    <view class="modal-content" catchtap>
+      <view class="lock-icon">🔒</view>
+      <view class="modal-title">分数与排名还未解锁</view>
+      <view class="lock-text">
+        <view>先累计给 {{requiredCount}} 张照片打分</view>
+        <view>才能查看自己的分数和全站排名</view>
+      </view>
+
+      <!-- 进度条 -->
+      <view class="lock-progress">
+        <view class="lock-progress-bar">
+          <view class="lock-progress-fill" style="width: {{progressPercent}}%"></view>
+        </view>
+        <view class="lock-progress-text">
+          已评价 {{givenCount}} / {{requiredCount}} 张，还差 {{remainCount}} 张
+        </view>
+      </view>
+
+      <view class="modal-actions">
+        <view class="btn btn-primary" bindtap="onGoRating">去打分</view>
+        <view class="btn btn-text" bindtap="onCloseLockModal">稍后再说</view>
       </view>
     </view>
   </view>

@@ -55,6 +55,21 @@ exports.main = async (event, context) => {
       },
     });
 
+    // 5. 累加「已给他人打分次数」
+    // 该计数用于判断是否可以查看自己的分数，独立累加不随照片被删除而减少
+    try {
+      await db.collection('users')
+        .where({ _openid: openid })
+        .update({
+          data: {
+            ratings_given: db.command.inc(1),
+          },
+        });
+    } catch (e) {
+      // 计数失败不影响评分本身（极端情况下用户需要多打一次分才能解锁）
+      console.warn('[submitRating] 更新已评价次数失败:', e);
+    }
+
     return { code: 0, message: '评分成功' };
   } catch (err) {
     console.error('[submitRating] 错误:', err);
