@@ -103,16 +103,31 @@ exports.main = async (event, context) => {
         openid, // 要求用户近两小时内访问过小程序
       });
 
-      if (checkRes.errcode !== 0) {
+      console.log('[uploadPhoto] 内容安全检测返回:', JSON.stringify(checkRes));
+
+      // 云调用出错会直接抛异常；返回体若带 errcode 则需为 0
+      if (checkRes && typeof checkRes.errcode === 'number' && checkRes.errcode !== 0) {
         throw new Error(`errcode=${checkRes.errcode} errmsg=${checkRes.errmsg}`);
       }
 
-      traceId = checkRes.traceId;
+      // 成功时以是否拿到检测任务 id 为准（traceId / trace_id 两种写法都兼容）
+      traceId = (checkRes && (checkRes.traceId || checkRes.trace_id)) || '';
+
+      if (!traceId) {
+        throw new Error(`未获取到检测任务 id，返回值：${JSON.stringify(checkRes)}`);
+      }
     } catch (e) {
       // 未能提交检测的图片绝不展示，直接回滚
       console.error('[uploadPhoto] 提交内容安全检测失败:', e);
+
+      // -604101：云调用权限尚未生效（config.json 的权限配置有 10 分钟缓存）
+      const detail = String((e && e.message) || e);
+      const message = detail.indexOf('-604101') >= 0
+        ? '内容安全检测权限尚未生效，请 10 分钟后重试'
+        : '照片检测提交失败，请稍后重试';
+
       await rollback(photoId, cloud_file_id);
-      return { code: -1, message: '照片检测提交失败，请稍后重试' };
+      return { code: -1, message };
     }
 
     await db.collection('photos').doc(photoId).update({
